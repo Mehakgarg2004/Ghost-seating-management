@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seat {{ seat_number }} — Library</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #f4f6f8; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .card { background: white; border-radius: 16px; padding: 32px 28px; max-width: 380px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
+  .seat-badge { display: inline-block; background: #e8f5e9; color: #2e7d32; font-weight: 600; padding: 6px 16px; border-radius: 20px; font-size: 14px; margin-bottom: 16px; }
+  .seat-badge.occupied { background: #fde7e7; color: #c62828; }
+  h1 { font-size: 22px; margin-bottom: 8px; color: #1a1a1a; }
+  p.sub { color: #666; font-size: 14px; margin-bottom: 24px; }
+  input { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; margin-bottom: 16px; }
+  button { width: 100%; padding: 13px; border: none; border-radius: 10px; background: #2e7d32; color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #256429; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  .msg { margin-top: 16px; padding: 12px; border-radius: 10px; font-size: 14px; display: none; }
+  .msg.success { background: #e8f5e9; color: #2e7d32; display: block; }
+  .msg.error { background: #fde7e7; color: #c62828; display: block; }
+  .timer { font-size: 13px; color: #888; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  {% if is_occupied %}
+    <span class="seat-badge occupied">Occupied</span>
+  {% else %}
+    <span class="seat-badge">Available</span>
+  {% endif %}
+
+  <h1>Seat {{ seat_number }}</h1>
+  <p class="sub">Enter your roll number to {% if is_occupied %}extend your{% else %}book this{% endif %} seat for 2 hours</p>
+
+  <input type="text" id="roll" placeholder="e.g. UE23CS101" />
+  <button onclick="bookSeat()" id="bookBtn">
+    {% if is_occupied %}Extend My Seat{% else %}Book This Seat{% endif %}
+  </button>
+
+  <div class="msg" id="msgBox"></div>
+
+  {% if expires_at %}
+    <p class="timer">Currently reserved until: {{ expires_at }}</p>
+  {% endif %}
+</div>
+
+<script>
+function bookSeat() {
+  const roll = document.getElementById('roll').value.trim();
+  const msgBox = document.getElementById('msgBox');
+  const btn = document.getElementById('bookBtn');
+
+  if (!roll) {
+    msgBox.className = 'msg error';
+    msgBox.textContent = 'Please enter your roll number.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Booking...';
+
+  fetch('/allocate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      seat_number: '{{ seat_number }}',
+      student_roll: roll
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.textContent = '{% if is_occupied %}Extend My Seat{% else %}Book This Seat{% endif %}';
+    msgBox.className = data.success ? 'msg success' : 'msg error';
+    msgBox.textContent = data.message;
+    if (data.success) {
+      setTimeout(() => location.reload(), 1500);
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.textContent = 'Book This Seat';
+    msgBox.className = 'msg error';
+    msgBox.textContent = 'Something went wrong. Try again.';
+  });
+}
+</script>
+
+</body>
+</html>
