@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — Library Seats</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #f4f6f8; padding: 24px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 24px; margin-bottom: 20px; color: #1a1a1a; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .stat-num { font-size: 26px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: #777; margin-top: 4px; }
+  .green { color: #2e7d32; } .orange { color: #b8860b; } .red { color: #c62828; } .purple { color: #5e35b1; }
+
+  .legend { display: flex; gap: 16px; margin-bottom: 16px; font-size: 13px; color: #555; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  .seat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 30px; }
+  .seat { border-radius: 10px; padding: 10px 6px; text-align: center; font-size: 13px; border: 1px solid transparent; cursor: pointer; }
+  .seat.free { background: #e8f5e9; border-color: #a5d6a7; }
+  .seat.occupied { background: #fde7e7; border-color: #ef9a9a; }
+  .seat.expiring { background: #fff3e0; border-color: #ffcc80; }
+  .seat-num { font-weight: 700; }
+  .seat-sub { font-size: 11px; color: #666; margin-top: 2px; }
+
+  .section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a; }
+  .penalty-table { width: 100%; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .penalty-table th, .penalty-table td { text-align: left; padding: 10px 14px; font-size: 14px; }
+  .penalty-table th { background: #fafafa; color: #777; font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  .penalty-table tr:not(:last-child) td { border-bottom: 1px solid #f0f0f0; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge.blocked { background: #fde7e7; color: #c62828; }
+  .badge.warn { background: #fff3e0; color: #b8860b; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📚 Library Seat Dashboard</h1>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num green">{{ available }}</div><div class="stat-label">Free Seats</div></div>
+    <div class="stat-card"><div class="stat-num orange">{{ occupied }}</div><div class="stat-label">Occupied</div></div>
+    <div class="stat-card"><div class="stat-num red">{{ expiring }}</div><div class="stat-label">Expiring Soon</div></div>
+    <div class="stat-card"><div class="stat-num purple">{{ occ_pct }}%</div><div class="stat-label">Utilization</div></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:#a5d6a7"></span>Free</span>
+    <span><span class="dot" style="background:#ef9a9a"></span>Occupied</span>
+    <span><span class="dot" style="background:#ffcc80"></span>Expiring &lt;15 min</span>
+  </div>
+
+  <div class="seat-grid">
+    {% for seat in seats %}
+    <div class="seat {{ seat.status }}">
+      <div class="seat-num">{{ seat.seat_number }}</div>
+      <div class="seat-sub">{{ seat.student_roll if seat.is_occupied else 'Free' }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="section-title">⚠️ Penalty Board ({{ blocked_count }} blocked)</div>
+  <table class="penalty-table">
+    <tr><th>Roll Number</th><th>Reports</th><th>Status</th></tr>
+    {% for p in penalties %}
+    <tr>
+      <td>{{ p.student_roll }}</td>
+      <td>{{ p.report_count }}</td>
+      <td>
+        {% if p.is_blocked %}
+          <span class="badge blocked">Blocked until {{ p.blocked_until }}</span>
+        {% else %}
+          <span class="badge warn">Warning</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" style="color:#999">No reports yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+</body>
+</html>
