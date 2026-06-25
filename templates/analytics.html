@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics — Library Seats</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #f4f6f8; padding: 24px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 24px; margin-bottom: 20px; color: #1a1a1a; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .stat-card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .stat-num { font-size: 24px; font-weight: 700; color: #5e35b1; }
+  .stat-label { font-size: 12px; color: #777; margin-top: 4px; }
+
+  .section-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: #1a1a1a; }
+  .chart-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 160px; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bar { width: 100%; background: #7e57c2; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .bar-label { font-size: 10px; color: #888; margin-top: 6px; }
+
+  .heatmap-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .hcell { padding: 10px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 600; color: white; }
+
+  .day-list { display: flex; flex-direction: column; gap: 10px; }
+  .day-row { display: flex; align-items: center; gap: 12px; }
+  .day-name { width: 40px; font-size: 13px; color: #555; }
+  .day-bar-bg { flex: 1; background: #f0f0f0; border-radius: 6px; height: 10px; overflow: hidden; }
+  .day-bar-fill { background: #5e35b1; height: 100%; border-radius: 6px; }
+  .day-pct { width: 40px; text-align: right; font-size: 13px; color: #555; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📊 Library Analytics</h1>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num">{{ total_sessions }}</div><div class="stat-label">Total Sessions</div></div>
+    <div class="stat-card"><div class="stat-num">{{ peak_pct }}%</div><div class="stat-label">Peak Utilization</div></div>
+    <div class="stat-card"><div class="stat-num">{{ peak_hour }}</div><div class="stat-label">Busiest Hour</div></div>
+    <div class="stat-card"><div class="stat-num">{{ avg_session }}m</div><div class="stat-label">Avg Session</div></div>
+  </div>
+
+  <div class="section-title">Hourly Occupancy Trend</div>
+  <div class="chart-card">
+    <div class="bar-chart" id="barChart"></div>
+  </div>
+
+  <div class="section-title">Seat-wise Booking Heatmap</div>
+  <div class="chart-card">
+    <div class="heatmap-grid" id="heatmapGrid"></div>
+  </div>
+
+  <div class="section-title">Day-wise Utilization</div>
+  <div class="chart-card">
+    <div class="day-list">
+      {% for d in day_stats %}
+      <div class="day-row">
+        <div class="day-name">{{ d.name }}</div>
+        <div class="day-bar-bg"><div class="day-bar-fill" style="width:{{ d.pct }}%"></div></div>
+        <div class="day-pct">{{ d.pct }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+const hourlyLabels = {{ hourly_labels|safe }};
+const hourlyData = {{ hourly_data|safe }};
+const heatmapData = {{ heatmap_data|safe }};
+
+const barChart = document.getElementById('barChart');
+hourlyLabels.forEach((label, i) => {
+  const val = hourlyData[i];
+  barChart.innerHTML += `
+    <div class="bar-wrap">
+      <div class="bar" style="height:${val}%"></div>
+      <div class="bar-label">${label}h</div>
+    </div>`;
+});
+
+function heatColor(pct) {
+  if (pct < 20) return '#c8e6c9';
+  if (pct < 40) return '#a5d6a7';
+  if (pct < 60) return '#81c784';
+  if (pct < 80) return '#66bb6a';
+  return '#43a047';
+}
+
+const heatmapGrid = document.getElementById('heatmapGrid');
+heatmapData.forEach(item => {
+  heatmapGrid.innerHTML += `
+    <div class="hcell" style="background:${heatColor(item.pct)}">
+      ${item.seat}<br>${item.pct}%
+    </div>`;
+});
+</script>
+
+</body>
+</html>
